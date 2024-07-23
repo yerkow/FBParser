@@ -47,15 +47,6 @@ def get_tags_from_db(dbhost, dbuser, dbpassword, db):
             cursor.close()
             connection.close()
 
-# Функция для удаления профиля GoLogin
-def delete_gologin_profile(profile_path):
-    if os.path.exists(profile_path):
-        try:
-            shutil.rmtree(profile_path)
-            logging.info(f"Профиль GoLogin удален: {profile_path}")
-        except Exception as e:
-            logging.error(f"Ошибка при удалении профиля GoLogin: {e}")
-
 # Функция для выполнения задачи с повторами в случае ошибки
 def worker(index, tag_queue, profile, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params, retries=3, delay=5):
     profile_path = f'C:\\Users\\asdfg\\AppData\\Local\\Temp\\gologin_{profile}'  # Путь к папке профиля GoLogin
@@ -76,7 +67,6 @@ def worker(index, tag_queue, profile, dbhost, dbuser, dbpassword, db, gl_token, 
                         time.sleep(delay)
                     else:
                         logging.error(f"Рабочий {index} не справился после {retries} попыток для тега {tag}.")
-                        delete_gologin_profile(profile_path)
                         tag_queue.put(tag)  # Возвращаем тег в очередь для повторной обработки
                         break
         except Exception as e:
