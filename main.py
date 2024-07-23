@@ -1,17 +1,20 @@
-import multiprocessing
-import time
-import shutil
-import os
-import mysql.connector
 import logging
-from logging.handlers import RotatingFileHandler
-from parser import parse_with_nologin
+import multiprocessing
+import os
+import shutil
+import time
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
+
+import mysql.connector
+
+from parser import parse_with_nologin
+
 
 # Настройка логирования
 def setup_logging():
     log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    log_file = datetime.now().strftime('log_%Y-%m-%d.txt')
+    log_file = datetime.now().strftime('log_%Y-%m-%d_%H-%M-%S.txt')
 
     file_handler = RotatingFileHandler(log_file, maxBytes=10**6, backupCount=5)
     file_handler.setFormatter(log_formatter)
@@ -54,7 +57,7 @@ def delete_gologin_profile(profile_path):
             logging.error(f"Ошибка при удалении профиля GoLogin: {e}")
 
 # Функция для выполнения задачи с повторами в случае ошибки
-def worker(index, tag_queue, profile, facebook_email, facebook_password, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params, retries=3, delay=5):
+def worker(index, tag_queue, profile, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params, retries=3, delay=5):
     profile_path = f'C:\\Users\\asdfg\\AppData\\Local\\Temp\\gologin_{profile}'  # Путь к папке профиля GoLogin
     while True:
         try:
@@ -62,7 +65,7 @@ def worker(index, tag_queue, profile, facebook_email, facebook_password, dbhost,
             attempt = 0
             while attempt < retries:
                 try:
-                    parse_with_nologin(index, tag, profile, facebook_email, facebook_password, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params)
+                    parse_with_nologin(index, tag, profile, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params)
                     logging.info(f"Рабочий {index} успешно обработал тег: {tag}")
                     break  # Успешное завершение обработки
                 except Exception as e:
@@ -96,7 +99,7 @@ def main():
     extra_params = [
         '--disable-notifications',
         '--disable-images',
-        '--headless=new'
+        # '--headless=new'
     ]
     gl_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NjllOWZmM2MzNjc2YjZkNWIzYmU5NTAiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2NjllYTA4ODExNmUzNDMxNzcxMWE0ZGYifQ.gnu-Qmsxzo2ZKvbRi93AcyhRKInr4B7Jt9OS9EmwLRs'
 
@@ -107,21 +110,11 @@ def main():
         logging.error("Теги не получены из базы данных.")
         return
 
-    # Данные профилей, email и паролей
+    # Данные профилей
     profiles = [
         "669ea07d251669cb3a6e309e",
         "669ea07b1f41219bb9aaa139",
         "669e9ff4c3676b6d5b3be9a6",
-    ]
-    facebook_emails = [
-        'thirtyfourwave@gmail.com',
-        'thirtyfourwave@gmail.com',
-        'thirtyfourwave@gmail.com',
-    ]
-    facebook_passwords = [
-        'iMasTesting2024',
-        'iMasTesting2024',
-        'iMasTesting2024',
     ]
 
     # Создание менеджера и очереди тегов
@@ -135,11 +128,9 @@ def main():
         processes = []
         for i in range(num_processes):
             profile = profiles[i % len(profiles)]
-            facebook_email = facebook_emails[i % len(facebook_emails)]
-            facebook_password = facebook_passwords[i % len(facebook_passwords)]
             process = multiprocessing.Process(
                 target=worker,
-                args=(i, tag_queue, profile, facebook_email, facebook_password, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params)
+                args=(i, tag_queue, profile, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params)
             )
             processes.append(process)
             process.start()

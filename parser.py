@@ -1,28 +1,28 @@
 import datetime
+import logging
 import random
 import re
 import time
-import mysql.connector
-import logging
-
 from random import randrange
 from urllib.parse import unquote
+
+import mysql.connector
 from bs4 import BeautifulSoup
 from gologin import GoLogin
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.service import Service as ChromeDriverService
+from webdriver_manager.chrome import ChromeDriverManager
 
-def parse_with_nologin(index, tag, profile, facebook_email, facebook_password, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params):
+
+def parse_with_nologin(index, tag, profile, dbhost, dbuser, dbpassword, db, gl_token, select_browser, extra_params):
     global gl
     global chrome_options
 
     db_connection = None
     cursor = None
     driver = None
+    driver_version = '125.0.6422.41'
 
     try:
         # Подключение к базе данных MySQL
@@ -52,7 +52,6 @@ def parse_with_nologin(index, tag, profile, facebook_email, facebook_password, d
                 'extra_params': extra_params,
                 # 'extra_params': ['--headless=new','--disable-notifications', '--disable-images'],
                 'port': random.randint(3500, 9999),
-                'tmpdir':
             })
 
             # Настройка WebDriver (в данном случае Chrome)
@@ -70,26 +69,27 @@ def parse_with_nologin(index, tag, profile, facebook_email, facebook_password, d
             # chrome_options.add_argument("--disable-css")
             chrome_options.add_argument("headless")
 
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(service=ChromeDriverService(ChromeDriverManager(driver_version = driver_version).install()), options=chrome_options)
         # Открытие страницы
-        driver.get("http://facebook.com")
-        # driver.maximize_window()
-        wait = WebDriverWait(driver, 30)
-        time.sleep(randrange(1, 15))
-
-        # Вход в аккаунт
-        print(f"P - {index} | {tag}: Выполняем вход в аккаунт...")
-        email_field = wait.until(ec.visibility_of_element_located((By.NAME, 'email')))
-        email_field.send_keys(facebook_email)
-        pass_field = wait.until(ec.visibility_of_element_located((By.NAME, 'pass')))
-        pass_field.send_keys(facebook_password)
-        pass_field.send_keys(Keys.RETURN)
-
-        time.sleep(10)
+        # driver.get("http://facebook.com")
+        # # driver.maximize_window()
+        # wait = WebDriverWait(driver, 30)
+        # time.sleep(randrange(1, 15))
+        #
+        # # Вход в аккаунт
+        # print(f"P - {index} | {tag}: Выполняем вход в аккаунт...")
+        # email_field = wait.until(ec.visibility_of_element_located((By.NAME, 'email')))
+        # email_field.send_keys(facebook_email)
+        # pass_field = wait.until(ec.visibility_of_element_located((By.NAME, 'pass')))
+        # pass_field.send_keys(facebook_password)
+        # pass_field.send_keys(Keys.RETURN)
+        #
+        # time.sleep(10)
 
         # Поиск постов по тегу
         driver.get(
             f'https://www.facebook.com/search/posts?q={tag}&filters=eyJyZWNlbnRfcG9zdHM6MCI6IntcIm5hbWVcIjpcInJlY2VudF9wb3N0c1wiLFwiYXJnc1wiOlwiXCJ9In0%3D')
+        time.sleep(randrange(1, 15))
         print(f"P - {index} | {tag}: Поиск постов по тегу.. #{tag}")
         ### SCROLLING
 
@@ -110,7 +110,7 @@ def parse_with_nologin(index, tag, profile, facebook_email, facebook_password, d
         #
         # Пауза загрузки страницы
         print(f"P - {index} | {tag}: Скроллим ленту..")
-        SCROLL_PAUSE_TIME = randrange(3, 5)
+        SCROLL_PAUSE_TIME = randrange(5, 10)
         scroll_stop_limit = 50
         scroll_stop = 1
         # while True:

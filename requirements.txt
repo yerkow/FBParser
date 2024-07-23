@@ -3,3 +3,5 @@ gologin==2024.7.13204038
 bs4==0.0.2
 beautifulsoup4==4.12.3
 mysql.connector==2.2.9
+pyppeteer~=2.0.0
+requests~=2.32.3
